@@ -2,30 +2,34 @@
 name: skill-creator
 description: >
   Create a new skill in this repository. Use when the user wants to add, create, or write a new skill
-  to this repo — regardless of category. Triggers for: "add a skill", "create a skill", "new skill",
-  "write a skill for", "add skill to this repo".
+  to this repo. Triggers for: "add a skill", "create a skill", "new skill", "write a skill for",
+  "add skill to this repo".
 ---
 
 # Skill Creator
 
-Scaffolds a new skill in this repository and keeps `CLAUDE.md` and `README.md` in sync.
+Scaffolds a new skill at `skills/<skill-name>/SKILL.md` in this repo's local feed. See `.claude/skills/_shared/CONVENTIONS.md` for naming and frontmatter rules.
 
----
+## Step 1 — Gather information (one message)
 
-## Step 1 — Gather Information
+Ask the user:
 
-Ask the user **in one message**:
+1. **Skill name** — lowercase, hyphen-separated (e.g. `python-project-creator`, `test-runner`). Becomes the folder name AND the `name` frontmatter field.
+2. **Description** — one or two sentences with trigger phrases (verbs and exact words a user would say). This is what Claude Code routes on, so be specific.
+3. **What the skill should do** — enough detail to write the body: steps, tools, decisions, expected outputs.
 
-1. **Category** — the category folder under `skills/`, e.g. `dotnet`, `python`, `git`. Use lowercase, hyphen-separated words.
-2. **Skill name** — the skill's folder name, e.g. `project-creator`, `test-runner`. Use lowercase, hyphen-separated words. This becomes the `name` in the frontmatter.
-3. **Description** — one or two sentences describing what the skill does and when it should be triggered. This becomes the `description` frontmatter field and must be keyword-rich so Claude Code can discover it automatically.
-4. **What the skill should do** — enough detail to write the skill body (steps, tools used, decisions, outputs).
+## Step 2 — Validate the name
 
----
+Reject if the name:
+- contains anything other than lowercase letters, digits, and hyphens
+- starts or ends with a hyphen
+- already exists at `skills/<skill-name>/`
 
-## Step 2 — Create the Skill File
+If invalid, explain why and ask for a corrected name.
 
-Create `skills/<category>/<skill-name>/SKILL.md` with this structure:
+## Step 3 — Create the skill file
+
+Write `skills/<skill-name>/SKILL.md`:
 
 ```markdown
 ---
@@ -36,58 +40,24 @@ description: >
 
 # <Title>
 
-<Body: step-by-step procedure with all detail needed to complete the task>
+## Step 1 — <first step>
+
+<...>
 ```
 
-Rules:
-- The `name` field must match the folder name exactly.
-- The `description` must include trigger phrases — words and phrases the user would naturally say to invoke this skill.
-- The body must be self-contained: include all steps, commands, decision points, and expected outputs.
-- Use `## Step N — Title` headings to structure multi-step procedures.
+Authoring rules:
+- `name` must equal the folder name exactly.
+- `description` must include trigger phrases.
+- The body is self-contained: include every step, command, decision point, and expected output. The body is what Claude follows when the skill fires.
+- Prefer Claude's native tools (Read, Write, Glob, Edit) over shell commands. Use Bash only when shell is genuinely needed (e.g. running an external CLI).
+- Do not triplicate commands for Linux/macOS/Windows. Bash via git-bash works on all three.
 
----
-
-## Step 3 — Update CLAUDE.md
-
-Add a row to the **Available Skills** table in `CLAUDE.md`:
-
-```
-| `skills/<category>/<skill-name>` | <skill-name> | <one-line description> |
-```
-
-The table is under the `## Available Skills` heading.
-
----
-
-## Step 4 — Update README.md
-
-Find the `## Available Skills` section. Under the appropriate `### <Category>` heading (create it if it doesn't exist), add a row:
-
-```
-| [<category>/<skill-name>](skills/<category>/<skill-name>/SKILL.md) | <one-line description> |
-```
-
-If a new `### <Category>` heading is needed, also add the table header:
-```markdown
-### <Category>
-
-| Skill | Description |
-|---|---|
-| [<category>/<skill-name>](skills/<category>/<skill-name>/SKILL.md) | <one-line description> |
-```
-
----
-
-## Step 5 — Confirm and Offer Installation
+## Step 4 — Confirm and offer to install
 
 Report:
-- File created: `skills/<category>/<skill-name>/SKILL.md`
-- `CLAUDE.md` updated
-- `README.md` updated
-- Suggested example prompts a user could say to trigger the new skill
+- File created: `skills/<skill-name>/SKILL.md`
+- 2–3 example user prompts that would trigger the new skill (drawn from the description's trigger phrases)
 
-Then ask: **"Would you like to install this skill now?"**
+Then ask: **"Install this skill now?"**
 
-If yes, invoke the `skill-installer` skill for `<category>/<skill-name>` and let it handle scope selection and installation.
-
-Finally, print the token usage for this skill execution (input tokens, output tokens, cache reads/writes).
+If yes, hand off to `skill-installer` for `<skill-name>` and let it ask about scope.
