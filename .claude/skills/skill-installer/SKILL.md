@@ -10,12 +10,14 @@ description: >
 
 # Skill Installer
 
-Copies a skill from this repository into a target Claude Code project (local) or into the user's global Claude Code config (global), and registers it via an `@`-import in the appropriate `CLAUDE.md`.
+Copies a skill from this repository into a target Claude Code project (local) or into the user's global Claude Code config (global). Skills are auto-discovered by Claude Code — no registration is needed.
 
-| Scope | Skills land in | Registered in | Available |
-|---|---|---|---|
-| **Local** | `<project>/.claude/skills/…` | `<project>/CLAUDE.md` | That project only |
-| **Global** | `~/.claude/skills/…` | `~/.claude/CLAUDE.md` | All Claude Code sessions |
+| Scope | Skills land in | Available |
+|---|---|---|
+| **Local** | `<project>/.claude/skills/<name>/` | That project only |
+| **Global** | `~/.claude/skills/<name>/` | All Claude Code sessions |
+
+> `<name>` is the value of the `name` field in the skill's YAML frontmatter — **not** the category/path used in this repo. Claude Code only discovers skills one level deep inside a skills directory.
 
 ---
 
@@ -29,7 +31,10 @@ uname -s 2>/dev/null || echo "Windows"
 
 - Output starts with `Linux` → Linux
 - Output starts with `Darwin` → macOS
-- Output is `Windows` or command fails → Windows (use PowerShell commands)
+- Output contains `MINGW` or `MSYS` → Windows via Git Bash. Use the **MINGW64** commands below.
+- Output is `Windows` or command fails → Native Windows PowerShell. Use the **PowerShell** commands below.
+
+> **MINGW64 note:** when running on Windows through Git Bash, bash expands `$variable` before PowerShell sees it. Always resolve the Windows home path via `cmd.exe` into a bash variable first, then pass that variable to PowerShell.
 
 ---
 
@@ -64,16 +69,21 @@ Read each SKILL.md's `name` and `description` from its YAML frontmatter to popul
 
 ---
 
-## Step 4 — Gather Information
+## Step 4 — Extract Intent and Gather Only Missing Information
 
-Ask the user **in one message**:
-1. **Which skill(s)** to install — use the list from Step 3. Multiple allowed.
-2. **Scope** — local or global?
-   - **Local**: installed into a specific project only.
-   - **Global**: installed into `~/.claude/` and available in every Claude Code session.
-3. **Target project root** *(only if local)* — absolute path to the root of the project. The `CLAUDE.md` there will be created if absent.
+Before asking the user anything, read their original message and extract what you already know:
 
-> Never proceed without a confirmed scope. Never proceed with local install without a confirmed absolute path.
+- **Skill name/path**: did they name a skill? (e.g. "install dotnet/project-creator")
+- **Scope**: did they say "globally", "global", "into my project", or "locally"?
+
+**Local always means the current working directory** — the project Claude Code is running in. Never ask the user for a path.
+
+Ask only for what is genuinely missing, in a single message:
+- If skill unknown: show the list from Step 3 and ask which to install
+- If scope unknown: ask global or local
+- If skill + scope are both known: proceed directly without asking anything
+
+> Never proceed without a confirmed skill and scope.
 
 ---
 
@@ -91,117 +101,112 @@ mkdir -p "$HOME/.claude"
 TARGET="$HOME/.claude"
 ```
 
-Windows (PowerShell):
+MINGW64 (Git Bash on Windows):
+```bash
+WIN_HOME=$(cmd.exe //c "echo %USERPROFILE%" 2>/dev/null | tr -d '\r')
+TARGET="$WIN_HOME\.claude"
+powershell.exe -Command "New-Item -ItemType Directory -Force -Path '$TARGET' | Out-Null"
+```
+
+PowerShell (native):
 ```powershell
 $target = Join-Path $env:USERPROFILE ".claude"
 New-Item -ItemType Directory -Force -Path $target | Out-Null
+$TARGET = $target
 ```
 
-**If local:** `<TARGET>` is the path provided by the user. Verify it exists:
+**If local:** `<TARGET>` is the current working directory (where `claude` was executed). Resolve it:
 
-Linux/macOS:
+Linux/macOS / MINGW64:
 ```bash
-test -d "<TARGET>" && echo "exists" || echo "missing"
+TARGET=$(pwd)
 ```
 
-Windows (PowerShell):
+PowerShell (native):
 ```powershell
-Test-Path "<TARGET>" -PathType Container
+$TARGET = (Get-Location).Path
 ```
-
-If the local target is missing → stop and ask the user to verify the path. Do **not** create it automatically.
 
 ---
 
-## Step 6 — Create Destination Directory
+## Step 6 — Extract Skill Name and Create Destination Directory
 
-For each selected skill (relative path `<CATEGORY>/<SKILL_NAME>`):
+For each selected skill, first read the `name` field from its `SKILL.md` frontmatter:
+
+Linux/macOS / MINGW64:
+```bash
+SKILL_NAME=$(grep -m1 '^name:' "<REPO_ROOT>/skills/<CATEGORY>/<SKILL_PATH>/SKILL.md" | sed 's/name:[[:space:]]*//')
+```
+
+PowerShell (native):
+```powershell
+$skillName = (Select-String -Path "<REPO_ROOT>\skills\<CATEGORY>\<SKILL_PATH>\SKILL.md" -Pattern '^name:\s*(.+)').Matches[0].Groups[1].Value.Trim()
+```
+
+Then create the destination using the skill name as a **flat** single-level folder:
 
 Linux/macOS:
 ```bash
-mkdir -p "<TARGET>/.claude/skills/<CATEGORY>/<SKILL_NAME>"
+# Local
+mkdir -p "<TARGET>/.claude/skills/$SKILL_NAME"
+# Global (TARGET is already ~/.claude)
+mkdir -p "<TARGET>/skills/$SKILL_NAME"
 ```
 
-Windows (PowerShell):
+MINGW64 (Git Bash on Windows) — `$SKILL_NAME` and `$TARGET` are bash variables set above:
+```bash
+# Local
+DEST="<TARGET>\.claude\skills\$SKILL_NAME"
+# Global (TARGET is WIN_HOME\.claude)
+DEST="$TARGET\skills\$SKILL_NAME"
+powershell.exe -Command "New-Item -ItemType Directory -Force -Path '$DEST' | Out-Null"
+```
+
+PowerShell (native):
 ```powershell
-New-Item -ItemType Directory -Force -Path "<TARGET>\.claude\skills\<CATEGORY>\<SKILL_NAME>"
+# Local
+$dest = Join-Path (Join-Path "<TARGET>" ".claude\skills") $skillName
+# Global (target is already $env:USERPROFILE\.claude)
+$dest = Join-Path (Join-Path "<TARGET>" "skills") $skillName
+New-Item -ItemType Directory -Force -Path $dest | Out-Null
 ```
-
-> For **global** scope, the target itself is already `~/.claude`, so the path becomes `~/.claude/skills/<CATEGORY>/<SKILL_NAME>` — do **not** add `.claude` again.
 
 ---
 
 ## Step 7 — Copy Skill Files
 
-Copy all files from this repo's skill folder into the target. This preserves any scripts, references, or assets bundled with the skill.
+Copy all files from this repo's skill folder into the flat destination created in Step 6. **The destination directory must exist before copying.**
 
 Linux/macOS:
 ```bash
-cp -r "<REPO_ROOT>/skills/<CATEGORY>/<SKILL_NAME>/." "<DEST>/skills/<CATEGORY>/<SKILL_NAME>/"
+# Local
+cp -r "<REPO_ROOT>/skills/<CATEGORY>/<SKILL_PATH>/." "<TARGET>/.claude/skills/$SKILL_NAME/"
+# Global
+cp -r "<REPO_ROOT>/skills/<CATEGORY>/<SKILL_PATH>/." "<TARGET>/skills/$SKILL_NAME/"
 ```
 
-Windows (PowerShell):
-```powershell
-Copy-Item -Recurse -Force "<REPO_ROOT>\skills\<CATEGORY>\<SKILL_NAME>\*" "<DEST>\skills\<CATEGORY>\<SKILL_NAME>\"
-```
-
-Where `<DEST>` is:
-- Local: `<TARGET>/.claude`
-- Global: `<TARGET>` (which is already `~/.claude`)
-
----
-
-## Step 8 — Register in Target CLAUDE.md
-
-The import line to add is:
-```
-@.claude/skills/<CATEGORY>/<SKILL_NAME>/SKILL.md
-```
-
-The `CLAUDE.md` lives at:
-- Local: `<TARGET>/CLAUDE.md`
-- Global: `<TARGET>/CLAUDE.md` (i.e. `~/.claude/CLAUDE.md`)
-
-**If the file does not exist** — create it with just the import line.  
-**If it exists** — check whether the import is already present. If not, append it.
-
-Linux/macOS:
+MINGW64 (Git Bash on Windows) — `$DEST` is the bash variable set in Step 6:
 ```bash
-CLAUDE_FILE="<CLAUDE_MD_PATH>"
-IMPORT_LINE="@.claude/skills/<CATEGORY>/<SKILL_NAME>/SKILL.md"
-
-if [ ! -f "$CLAUDE_FILE" ]; then
-  echo "$IMPORT_LINE" > "$CLAUDE_FILE"
-elif ! grep -qF "$IMPORT_LINE" "$CLAUDE_FILE"; then
-  printf "\n%s\n" "$IMPORT_LINE" >> "$CLAUDE_FILE"
-fi
+powershell.exe -Command "Copy-Item -Recurse -Force '<REPO_ROOT>\skills\<CATEGORY>\<SKILL_PATH>\*' '$DEST'"
 ```
 
-Windows (PowerShell):
+PowerShell (native) — `$dest` was set and created in Step 6:
 ```powershell
-$claudeFile = "<CLAUDE_MD_PATH>"
-$importLine = "@.claude/skills/<CATEGORY>/<SKILL_NAME>/SKILL.md"
-
-if (-not (Test-Path $claudeFile)) {
-    Set-Content -Path $claudeFile -Value $importLine
-} elseif (-not (Select-String -Path $claudeFile -SimpleMatch $importLine -Quiet)) {
-    Add-Content -Path $claudeFile -Value "`n$importLine"
-}
+Copy-Item -Recurse -Force "<REPO_ROOT>\skills\<CATEGORY>\<SKILL_PATH>\*" "$dest\"
 ```
 
 ---
 
-## Step 9 — Confirm
+## Step 8 — Confirm
 
 Report to the user:
 
 - Which skill(s) were installed
 - Scope: local or global
 - Destination path
-- What was added to `CLAUDE.md`
 - How to use it:
-  - **Local**: "Open Claude Code in `<TARGET>` and use the skill."
-  - **Global**: "The skill is now available in every Claude Code session. Just ask Claude to use it."
+  - **Local**: "Open Claude Code in `<TARGET>` and use the skill. Type `/` to see it listed, or just describe the task."
+  - **Global**: "The skill is now available in every Claude Code session. Type `/` to see it, or just describe the task."
 
 ---
 
@@ -213,13 +218,10 @@ Repeat Steps 6–8 for each selected skill before reporting in Step 9.
 
 ## Cross-Platform Reference
 
-| Action | Linux/macOS | Windows (PowerShell) |
-|---|---|---|
-| Detect OS | `uname -s` | `uname` not available; assume Windows |
-| Home dir | `$HOME` | `$env:USERPROFILE` |
-| Create dir | `mkdir -p` | `New-Item -ItemType Directory -Force` |
-| Copy dir contents | `cp -r "src/." "dst/"` | `Copy-Item -Recurse -Force "src\*" "dst\"` |
-| Check file exists | `test -f` | `Test-Path -PathType Leaf` |
-| Check dir exists | `test -d` | `Test-Path -PathType Container` |
-| Append to file | `printf "\n%s\n" "$line" >> file` | `Add-Content -Value "`n$line"` |
-| Search in file | `grep -qF "str" file` | `Select-String -SimpleMatch -Quiet` |
+| Action | Linux/macOS | MINGW64 (Git Bash) | PowerShell (native) |
+|---|---|---|---|
+| Detect OS | `uname -s` → `Linux`/`Darwin` | `uname -s` → contains `MINGW` | `uname` not available |
+| Get Windows home | N/A | `cmd.exe //c "echo %USERPROFILE%" \| tr -d '\r'` | `$env:USERPROFILE` |
+| Create dir | `mkdir -p` | `powershell.exe -Command "New-Item -Force ..."` | `New-Item -ItemType Directory -Force` |
+| Copy dir contents | `cp -r "src/." "dst/"` | `powershell.exe -Command "Copy-Item -Recurse -Force 'src\*' 'dst'"` | `Copy-Item -Recurse -Force "src\*" "dst\"` |
+| Check dir exists | `test -d` | `powershell.exe -Command "Test-Path '...' -PathType Container"` | `Test-Path -PathType Container` |

@@ -5,7 +5,10 @@ This is a personal collection of Claude Code skills.
 ## Structure
 
 ```
-.claude/skills/        # Skills auto-loaded by Claude Code CLI (meta-skills)
+.claude/skills/        # Meta-skills: auto-loaded when this repo is open in Claude Code
+  skill-installer/     # Install a skill from this repo into a project or globally
+  skill-remover/       # Remove an installed skill
+  skill-creator/       # Scaffold a new skill in this repo
 skills/<category>/     # Installable skill catalog
   <skill-name>/
     SKILL.md

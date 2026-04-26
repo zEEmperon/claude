@@ -14,11 +14,21 @@ A personal collection of [Claude Code](https://docs.anthropic.com/en/docs/claude
    claude
    ```
 3. Ask Claude to install a skill:
-   > *"Install the dotnet/project-creator skill into /path/to/my-project"*
+   > *"Install the [skill] skill into /path/to/my-project"*
    >
-   > *"Install the dotnet/project-creator skill globally"*
+   > *"Install the [skill] skill globally"*
 
-The `skill-installer` skill handles the rest — it copies the skill files and registers them in the appropriate `CLAUDE.md`.
+The `skill-installer` skill handles the rest — it copies the skill files into the right directory.
+
+## Meta-Skills
+
+Meta-skills live in `.claude/skills/` and are auto-loaded when you open this repo in Claude Code. They manage the skill catalog itself.
+
+| Skill | Trigger examples |
+|---|---|
+| `skill-installer` | *"Install [skill] globally"*, *"Add [skill] to my project"* |
+| `skill-remover` | *"Remove [skill]"*, *"Uninstall [skill] globally"* |
+| `skill-creator` | *"Create a new skill for X"*, *"Add a skill to this repo"* |
 
 ## Available Skills
 
@@ -40,7 +50,9 @@ The `skill-installer` skill handles the rest — it copies the skill files and r
 ```
 .claude/
   skills/
-    skill-installer/   # Meta-skill: installs other skills from this repo
+    skill-installer/   # Install skills from this repo into a project or globally
+    skill-remover/     # Remove installed skills
+    skill-creator/     # Scaffold a new skill in this repo
 skills/
   dotnet/
     project-creator/   # Scaffold .NET solutions
