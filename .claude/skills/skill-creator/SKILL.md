@@ -78,10 +78,14 @@ If a new `### <Category>` heading is needed, also add the table header:
 
 ---
 
-## Step 5 — Confirm
+## Step 5 — Confirm and Offer Installation
 
 Report:
 - File created: `skills/<category>/<skill-name>/SKILL.md`
 - `CLAUDE.md` updated
 - `README.md` updated
 - Suggested example prompts a user could say to trigger the new skill
+
+Then ask: **"Would you like to install this skill now?"**
+
+If yes, invoke the `skill-installer` skill for `<category>/<skill-name>` and let it handle scope selection and installation.
