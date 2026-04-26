@@ -18,15 +18,9 @@ Removes a skill that was previously installed by `skill-installer`, either from 
 uname -s 2>/dev/null || echo "Windows"
 ```
 
-- Output starts with `Linux` → Linux
-- Output starts with `Darwin` → macOS
-- Output contains `MINGW` or `MSYS` → Windows via Git Bash. Use the **MINGW64** commands below.
-- Output is `Windows` or command fails → Native Windows PowerShell. Use the **PowerShell** commands below.
-
-> **MINGW64 note:** bash expands `$variable` before PowerShell sees it. Resolve the Windows home path via `cmd.exe` into a bash variable first:
-> ```bash
-> WIN_HOME=$(cmd.exe //c "echo %USERPROFILE%" 2>/dev/null | tr -d '\r')
-> ```
+- `Linux` / `Darwin` → Linux/macOS
+- contains `MINGW`/`MSYS` → MINGW64. Resolve home once: `WIN_HOME=$(cmd.exe //c "echo %USERPROFILE%" 2>/dev/null | tr -d '\r')`
+- `Windows` or fails → native PowerShell
 
 ---
 
@@ -130,23 +124,7 @@ Remove-Item -Recurse -Force (Join-Path "<SKILLS_PATH>" "<SKILL_NAME>")
 
 ---
 
-## Step 7 — Verify
-
-Confirm the directory no longer exists:
-
-Linux/macOS:
-```bash
-test -d "<SKILLS_PATH>/<SKILL_NAME>" && echo "still exists" || echo "removed"
-```
-
-Windows (PowerShell):
-```powershell
-Test-Path (Join-Path "<SKILLS_PATH>" "<SKILL_NAME>") -PathType Container
-```
-
----
-
-## Step 8 — Confirm
+## Step 7 — Confirm
 
 Report to the user:
 
@@ -159,16 +137,4 @@ Report to the user:
 
 ## Removing Multiple Skills
 
-Repeat Steps 5–7 for each skill (asking confirmation per skill) before the final report in Step 8.
-
----
-
-## Cross-Platform Reference
-
-| Action | Linux/macOS | MINGW64 (Git Bash) | PowerShell (native) |
-|---|---|---|---|
-| Detect OS | `uname -s` → `Linux`/`Darwin` | `uname -s` → contains `MINGW` | `uname` not available |
-| Get Windows home | N/A | `cmd.exe //c "echo %USERPROFILE%" \| tr -d '\r'` | `$env:USERPROFILE` |
-| List skill dirs | `find ... -type d` | `powershell.exe -Command "Get-ChildItem -Directory ..."` | `Get-ChildItem -Directory` |
-| Remove directory | `rm -rf "<path>"` | `powershell.exe -Command "Remove-Item -Recurse -Force '<path>'"` | `Remove-Item -Recurse -Force` |
-| Check dir exists | `test -d "<path>"` | `powershell.exe -Command "Test-Path '<path>' -PathType Container"` | `Test-Path -PathType Container` |
+Repeat Steps 5–6 for each skill (asking confirmation per skill), then report once in Step 7.

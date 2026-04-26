@@ -17,34 +17,27 @@ Copies a skill from this repository into a target Claude Code project (local) or
 | **Local** | `<project>/.claude/skills/<name>/` | That project only |
 | **Global** | `~/.claude/skills/<name>/` | All Claude Code sessions |
 
-> `<name>` is the value of the `name` field in the skill's YAML frontmatter — **not** the category/path used in this repo. Claude Code only discovers skills one level deep inside a skills directory.
+> Skills are installed using the `name` field from SKILL.md frontmatter as a flat folder — not the category path used in this repo.
 
 ---
 
-## Step 1 — Detect OS
-
-Run the following to detect the operating system:
+## Step 1 — Detect OS and Locate Repo Root
 
 ```bash
 uname -s 2>/dev/null || echo "Windows"
 ```
 
-- Output starts with `Linux` → Linux
-- Output starts with `Darwin` → macOS
-- Output contains `MINGW` or `MSYS` → Windows via Git Bash. Use the **MINGW64** commands below.
-- Output is `Windows` or command fails → Native Windows PowerShell. Use the **PowerShell** commands below.
+- `Linux` / `Darwin` → use Linux/macOS commands
+- contains `MINGW`/`MSYS` → Windows via Git Bash (MINGW64)
+- `Windows` or command fails → native PowerShell
 
-> **MINGW64 note:** when running on Windows through Git Bash, bash expands `$variable` before PowerShell sees it. Always resolve the Windows home path via `cmd.exe` into a bash variable first, then pass that variable to PowerShell.
+> **MINGW64:** bash expands `$variable` before PowerShell sees it. Resolve the Windows home via `cmd.exe` once: `WIN_HOME=$(cmd.exe //c "echo %USERPROFILE%" 2>/dev/null | tr -d '\r')`
 
----
-
-## Step 2 — Locate This Repository's Root
-
-The root of this repository is the directory containing `CLAUDE.md` and the `skills/` folder. You already know this because Claude Code loaded this skill from it. Store it as `<REPO_ROOT>`.
+The repo root (`<REPO_ROOT>`) is the directory containing `CLAUDE.md` and `skills/` — already known from this skill's location.
 
 ---
 
-## Step 3 — List Available Skills
+## Step 2 — List Available Skills
 
 Scan the `skills/` directory to discover installable skills. Each skill lives in a subdirectory containing a `SKILL.md`. Show the user the relative path and the skill's `name` from its frontmatter.
 
@@ -69,7 +62,7 @@ Read each SKILL.md's `name` and `description` from its YAML frontmatter to popul
 
 ---
 
-## Step 4 — Extract Intent and Gather Only Missing Information
+## Step 3 — Extract Intent and Gather Only Missing Information
 
 Before asking the user anything, read their original message and extract what you already know:
 
@@ -87,7 +80,7 @@ Ask only for what is genuinely missing, in a single message:
 
 ---
 
-## Step 5 — Resolve Target Path
+## Step 4 — Resolve Target Path
 
 **If global:** set `<TARGET>` to the user's Claude Code config directory:
 - Linux/macOS: `~/.claude`
@@ -129,7 +122,7 @@ $TARGET = (Get-Location).Path
 
 ---
 
-## Step 6 — Extract Skill Name and Create Destination Directory
+## Step 5 — Extract Skill Name and Create Destination Directory
 
 For each selected skill, first read the `name` field from its `SKILL.md` frontmatter:
 
@@ -173,7 +166,7 @@ New-Item -ItemType Directory -Force -Path $dest | Out-Null
 
 ---
 
-## Step 7 — Copy Skill Files
+## Step 6 — Copy Skill Files
 
 Copy all files from this repo's skill folder into the flat destination created in Step 6. **The destination directory must exist before copying.**
 
@@ -197,7 +190,7 @@ Copy-Item -Recurse -Force "<REPO_ROOT>\skills\<CATEGORY>\<SKILL_PATH>\*" "$dest\
 
 ---
 
-## Step 8 — Confirm
+## Step 7 — Confirm
 
 Report to the user:
 
@@ -212,16 +205,4 @@ Report to the user:
 
 ## Installing Multiple Skills
 
-Repeat Steps 6–8 for each selected skill before reporting in Step 9.
-
----
-
-## Cross-Platform Reference
-
-| Action | Linux/macOS | MINGW64 (Git Bash) | PowerShell (native) |
-|---|---|---|---|
-| Detect OS | `uname -s` → `Linux`/`Darwin` | `uname -s` → contains `MINGW` | `uname` not available |
-| Get Windows home | N/A | `cmd.exe //c "echo %USERPROFILE%" \| tr -d '\r'` | `$env:USERPROFILE` |
-| Create dir | `mkdir -p` | `powershell.exe -Command "New-Item -Force ..."` | `New-Item -ItemType Directory -Force` |
-| Copy dir contents | `cp -r "src/." "dst/"` | `powershell.exe -Command "Copy-Item -Recurse -Force 'src\*' 'dst'"` | `Copy-Item -Recurse -Force "src\*" "dst\"` |
-| Check dir exists | `test -d` | `powershell.exe -Command "Test-Path '...' -PathType Container"` | `Test-Path -PathType Container` |
+Repeat Steps 5–6 for each selected skill, then report once in Step 7.
