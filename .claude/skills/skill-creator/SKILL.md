@@ -89,3 +89,5 @@ Report:
 Then ask: **"Would you like to install this skill now?"**
 
 If yes, invoke the `skill-installer` skill for `<category>/<skill-name>` and let it handle scope selection and installation.
+
+Finally, print the token usage for this skill execution (input tokens, output tokens, cache reads/writes).

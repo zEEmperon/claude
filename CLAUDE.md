@@ -9,6 +9,8 @@ This is a personal collection of Claude Code skills.
   skill-installer/     # Install a skill from this repo into a project or globally
   skill-remover/       # Remove an installed skill
   skill-creator/       # Scaffold a new skill in this repo
+  skill-runner/        # Run a skill from /skills without installing it
+  skill-upgrader/      # Update an installed skill to the latest catalog version
 skills/<category>/     # Installable skill catalog
   <skill-name>/
     SKILL.md

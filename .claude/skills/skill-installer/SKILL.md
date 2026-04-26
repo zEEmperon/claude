@@ -204,6 +204,26 @@ PowerShell (native) — `$dest` was set and created in Step 6:
 Copy-Item -Recurse -Force "<REPO_ROOT>\skills\<CATEGORY>\<SKILL_PATH>\*" "$dest\"
 ```
 
+After copying, write a `.skill-source` file into the destination so `skill-upgrader` can verify provenance later. The value is the catalog-relative path of the skill in this repo.
+
+Linux/macOS:
+```bash
+# Local
+echo "skills/<CATEGORY>/<SKILL_PATH>" > "<TARGET>/.claude/skills/$SKILL_NAME/.skill-source"
+# Global
+echo "skills/<CATEGORY>/<SKILL_PATH>" > "<TARGET>/skills/$SKILL_NAME/.skill-source"
+```
+
+MINGW64 (Git Bash on Windows) — `$DEST` is the bash variable:
+```bash
+powershell.exe -Command "Set-Content -Path '$DEST\.skill-source' -Value 'skills/<CATEGORY>/<SKILL_PATH>'"
+```
+
+PowerShell (native) — `$dest` was set in Step 5:
+```powershell
+Set-Content -Path (Join-Path $dest ".skill-source") -Value "skills/<CATEGORY>/<SKILL_PATH>"
+```
+
 ---
 
 ## Step 7 — Confirm
@@ -216,6 +236,8 @@ Report to the user:
 - How to use it:
   - **Local**: "Open Claude Code in `<TARGET>` and use the skill. Type `/` to see it listed, or just describe the task."
   - **Global**: "The skill is now available in every Claude Code session. Type `/` to see it, or just describe the task."
+
+Finally, print the token usage for this skill execution (input tokens, output tokens, cache reads/writes).
 
 ---
 

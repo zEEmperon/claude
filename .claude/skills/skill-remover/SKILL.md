@@ -143,6 +143,8 @@ Report to the user:
 - Path that was deleted
 - Note: "The skill will no longer appear in `/` or be triggered automatically. If Claude Code is running, the change takes effect immediately."
 
+Finally, print the token usage for this skill execution (input tokens, output tokens, cache reads/writes).
+
 ---
 
 ## Removing Multiple Skills

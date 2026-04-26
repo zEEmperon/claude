@@ -31,6 +31,8 @@ Meta-skills live in `.claude/skills/` and are auto-loaded when you open this rep
 | `skill-installer` | *"Install [skill] globally"*, *"Add [skill] to my project"* |
 | `skill-remover` | *"Remove [skill]"*, *"Uninstall [skill] globally"* |
 | `skill-creator` | *"Create a new skill for X"*, *"Add a skill to this repo"* |
+| `skill-runner` | *"Run [skill]"*, *"Try out [skill]"*, *"Test the dotnet skill"* |
+| `skill-upgrader` | *"Update [skill] globally"*, *"Upgrade [skill] in my project"*, *"Refresh [skill]"* |
 
 ## Available Skills
 
@@ -56,6 +58,8 @@ Meta-skills live in `.claude/skills/` and are auto-loaded when you open this rep
     skill-installer/   # Install skills from this repo into a project or globally
     skill-remover/     # Remove installed skills
     skill-creator/     # Scaffold a new skill in this repo
+    skill-runner/      # Run a skill from /skills without installing it
+    skill-upgrader/    # Update an installed skill to the latest catalog version
 skills/
   dotnet/
     project-creator/   # Scaffold .NET solutions
