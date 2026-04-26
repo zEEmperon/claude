@@ -14,7 +14,8 @@ Copies a skill from this repository into a target Claude Code project (local) or
 
 | Scope | Skills land in | Available |
 |---|---|---|
-| **Local** | `<project>/.claude/skills/<name>/` | That project only |
+| **Local** | `<cwd>/.claude/skills/<name>/` | Current project |
+| **Workspace** | `<path>/.claude/skills/<name>/` | That workspace only |
 | **Global** | `~/.claude/skills/<name>/` | All Claude Code sessions |
 
 > Skills are installed using the `name` field from SKILL.md frontmatter as a flat folder — not the category path used in this repo.
@@ -67,16 +68,17 @@ Read each SKILL.md's `name` and `description` from its YAML frontmatter to popul
 Before asking the user anything, read their original message and extract what you already know:
 
 - **Skill name/path**: did they name a skill? (e.g. "install dotnet/project-creator")
-- **Scope**: did they say "globally", "global", "into my project", or "locally"?
-
-**Local always means the current working directory** — the project Claude Code is running in. Never ask the user for a path.
+- **Scope**: did they say "globally", "local", or provide a path to a workspace?
+  - **local** = current working directory, no path needed
+  - **workspace** = user provides an explicit path to another project
+  - **global** = `~/.claude/`
 
 Ask only for what is genuinely missing, in a single message:
-- If skill unknown: show the list from Step 3 and ask which to install
-- If scope unknown: ask global or local
+- If skill unknown: show the list from Step 2 and ask which to install
+- If scope unknown: ask global, local, or a specific workspace path
 - If skill + scope are both known: proceed directly without asking anything
 
-> Never proceed without a confirmed skill and scope.
+> Never proceed without a confirmed skill and scope. For workspace scope, never proceed without a confirmed absolute path.
 
 ---
 
@@ -108,7 +110,7 @@ New-Item -ItemType Directory -Force -Path $target | Out-Null
 $TARGET = $target
 ```
 
-**If local:** `<TARGET>` is the current working directory (where `claude` was executed). Resolve it:
+**If local:** `<TARGET>` is the current working directory.
 
 Linux/macOS / MINGW64:
 ```bash
@@ -119,6 +121,20 @@ PowerShell (native):
 ```powershell
 $TARGET = (Get-Location).Path
 ```
+
+**If workspace:** `<TARGET>` is the absolute path provided by the user. Verify it exists:
+
+Linux/macOS / MINGW64:
+```bash
+test -d "<TARGET>" && echo "exists" || echo "missing"
+```
+
+PowerShell (native):
+```powershell
+Test-Path "<TARGET>" -PathType Container
+```
+
+If missing → stop and ask the user to verify the path. Do **not** create it.
 
 ---
 

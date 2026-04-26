@@ -1,6 +1,6 @@
 # Claude Skills
 
-A personal collection of [Claude Code](https://docs.anthropic.com/en/docs/claude-code) skills, organized by category and installable into any project.
+A collection of useful [Claude Code](https://docs.anthropic.com/en/docs/claude-code) skills, organized by category and installable into any project.
 
 ## Quick Start
 
@@ -14,9 +14,11 @@ A personal collection of [Claude Code](https://docs.anthropic.com/en/docs/claude
    claude
    ```
 3. Ask Claude to install a skill:
-   > *"Install the [skill] skill into /path/to/my-project"*
+   > *"Install [skill] globally"*
    >
-   > *"Install the [skill] skill globally"*
+   > *"Install [skill] into my current project"*
+   >
+   > *"Install [skill] into /path/to/any/workspace"*
 
 The `skill-installer` skill handles the rest — it copies the skill files into the right directory.
 
@@ -42,7 +44,8 @@ Meta-skills live in `.claude/skills/` and are auto-loaded when you open this rep
 
 | Scope | Where skills are copied | Available in |
 |---|---|---|
-| **Local** | `<project>/.claude/skills/` | That project only |
+| **Local** | `<cwd>/.claude/skills/` | Current project only |
+| **Workspace** | `<path>/.claude/skills/` | That workspace only |
 | **Global** | `~/.claude/skills/` | All Claude Code sessions |
 
 ## Repo Structure

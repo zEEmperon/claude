@@ -29,9 +29,12 @@ uname -s 2>/dev/null || echo "Windows"
 Before listing anything or asking questions, read the user's original message and extract what you already know:
 
 - **Skill name**: did they name a skill? (e.g. "remove dotnet-project-creator")
-- **Scope**: did they say "globally", "global", "from my project", or "locally"?
+- **Scope**: did they say "globally", "from my project" (local), or provide a path to a specific workspace?
+  - **local** = current working directory, no path needed
+  - **workspace** = user provides an explicit path
+  - **global** = `~/.claude/`
 
-**Local always means the current working directory** — the project Claude Code is running in. Never ask the user for a path.
+**Local always means the current working directory.** Never ask for a path unless scope is workspace.
 
 Only ask for information that is genuinely missing.
 
@@ -72,10 +75,11 @@ Get-ChildItem -Path (Join-Path (Get-Location).Path ".claude\skills") -Directory 
 
 Ask only for what is missing in a single message:
 - If skill name unknown: show list and ask which to remove
-- If scope unknown: ask global or local
+- If scope unknown: ask global, local, or a specific workspace path
+- If workspace scope: also ask for the absolute path if not already provided
 - If skill + scope are both known: proceed directly to Step 4 without asking anything
 
-> Never proceed without a confirmed skill name and scope.
+> Never proceed without a confirmed skill name and scope. For workspace scope, never proceed without a confirmed path.
 
 ---
 
@@ -83,12 +87,18 @@ Ask only for what is missing in a single message:
 
 **If global:**
 - Linux/macOS: `$HOME/.claude/skills`
-- MINGW64: `$WIN_HOME\.claude\skills` (bash variable)
+- MINGW64: `$WIN_HOME\.claude\skills`
 - PowerShell (native): `Join-Path $env:USERPROFILE ".claude\skills"`
 
 **If local** (current working directory):
 - Linux/macOS / MINGW64: `$(pwd)/.claude/skills`
 - PowerShell (native): `Join-Path (Get-Location).Path ".claude\skills"`
+
+**If workspace** (user-provided path):
+- Linux/macOS / MINGW64: `<PATH>/.claude/skills`
+- PowerShell (native): `Join-Path "<PATH>" ".claude\skills"`
+
+Verify the path exists before proceeding. If it doesn't, stop and report it.
 
 ---
 
